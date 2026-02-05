@@ -1,8 +1,17 @@
 import express from "express";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
+import rateLimit from "express-rate-limit";
 
 const app = express();
+
+// Rate limiting
+const stripeCheckoutLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50,                  // limit each IP to 50 /api/stripe/checkout requests per window
+  standardHeaders: true,    // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false      // Disable the `X-RateLimit-*` headers
+});
 
 // Middleware
 app.use(express.json());
@@ -156,7 +165,7 @@ app.get("/api/leads", (_req, res) => {
 });
 
 // API: Stripe Checkout (placeholder - requires Stripe configuration)
-app.post("/api/stripe/checkout", async (req, res) => {
+app.post("/api/stripe/checkout", stripeCheckoutLimiter, async (req, res) => {
   try {
     const { planId, successUrl, cancelUrl } = req.body;
 
